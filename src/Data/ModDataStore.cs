@@ -664,7 +664,11 @@ namespace STS2RitsuLib.Data
             public SaveScope Scope { get; } = scope;
             public Type DataType => typeof(T);
             public bool HadExistingData => false;
-            public bool IsInitialized { get; private set; }
+
+            // In-memory entries have no file to load, so they are usable the moment they are constructed.
+            // ModDataStore.GetEntry only initializes Global-scoped entries, so leaving this false made every
+            // Get/Modify call on an InMemory key throw "not initialized".
+            public bool IsInitialized { get; private set; } = true;
 
             public void Initialize(JsonSerializerOptions jsonOptions)
             {
