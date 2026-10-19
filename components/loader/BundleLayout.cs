@@ -41,8 +41,13 @@ namespace STS2RitsuLib.Loader
                 candidates.Add((version, target, variant));
             }
 
-            var compatible = candidates.Where(candidate => host == null || candidate.Version <= host)
-                .OrderByDescending(candidate => candidate.Version).ToArray();
+            // When the host version cannot be determined, pick the oldest variant: a newer variant may bind to
+            // APIs the host does not expose yet, which only fails later as MissingMethodException at patch time.
+            var compatible = (host == null
+                    ? candidates.OrderBy(candidate => candidate.Version)
+                    : candidates.Where(candidate => candidate.Version <= host)
+                        .OrderByDescending(candidate => candidate.Version))
+                .ToArray();
             if (compatible.Length == 0)
                 throw new NotSupportedException($"This RitsuLib bundle does not support game version {host}.");
             var selected = compatible[0];
