@@ -130,9 +130,11 @@ namespace STS2RitsuLib.Models.Capabilities
                 return null;
 
             EnsureCanAttach(incoming);
+            // Attach first: EnsureCanAttach allows an Owner-less instance to be attached again,
+            // so publishing before Attach would leave a half-attached entry if OnAttach throws.
+            incoming.Attach(Owner);
             _capabilities.Add(incoming);
             InvalidateAttachedSnapshot();
-            incoming.Attach(Owner);
             MarkDynamicVarsJustUpgraded(incoming, options);
             MarkDirty();
             return incoming;
@@ -187,9 +189,9 @@ namespace STS2RitsuLib.Models.Capabilities
             if (index < 0 || index > _capabilities.Count)
                 throw new ArgumentOutOfRangeException(nameof(index), index, "Index is outside the set bounds.");
 
+            capability.Attach(Owner);
             _capabilities.Insert(index, capability);
             InvalidateAttachedSnapshot();
-            capability.Attach(Owner);
             MarkDirty();
             return capability;
         }
@@ -525,9 +527,9 @@ namespace STS2RitsuLib.Models.Capabilities
 
             foreach (var capability in replacements)
             {
+                capability.Attach(Owner);
                 _capabilities.Add(capability);
                 InvalidateAttachedSnapshot();
-                capability.Attach(Owner);
             }
 
             MarkDirty();
@@ -769,9 +771,9 @@ namespace STS2RitsuLib.Models.Capabilities
                 }
 
                 LoadCapabilityState(capability, entry);
+                capability.Attach(Owner, true);
                 _capabilities.Add(capability);
                 InvalidateAttachedSnapshot();
-                capability.Attach(Owner, true);
                 NotifyCapabilityLoadedFromSave(capability);
             }
 
@@ -855,12 +857,11 @@ namespace STS2RitsuLib.Models.Capabilities
 
         private void AddLoadedCapability(CapabilityLoadItem item)
         {
+            item.Capability.Attach(Owner, true);
             _capabilities.Add(item.Capability);
             InvalidateAttachedSnapshot();
             if (item.IsDefault)
                 _defaultCapabilities.Add(item.Capability);
-
-            item.Capability.Attach(Owner, true);
         }
 
         private void AddMissingCapabilities(CapabilityLoadState loadState)
