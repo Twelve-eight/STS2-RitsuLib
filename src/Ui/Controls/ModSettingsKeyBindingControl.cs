@@ -205,7 +205,12 @@ namespace STS2RitsuLib.Settings
         public override void _Ready()
         {
             if (_captureButton != null)
+            {
                 _captureButton.Pressed += BeginCapture;
+                // Losing focus must end the capture for the same reason _ExitTree does: the
+                // control stays in the tree while its page is merely hidden.
+                _captureButton.FocusExited += EndCapture;
+            }
         }
 
         /// <summary>
@@ -224,6 +229,24 @@ namespace STS2RitsuLib.Settings
             _currentValue = value;
             if (!_capturing)
                 RefreshText();
+        }
+
+        /// <inheritdoc />
+        public override void _ExitTree()
+        {
+            // A capture left armed when the page is hidden would swallow the next keystroke and,
+            // through ApplyBinding, silently rewrite the user's binding on disk. The dropdown in
+            // this same directory already closes itself in _ExitTree; do the same here. Pages are
+            // hidden with Root.Visible = false and are not removed from the tree, so also treat a
+            // focus loss as the end of the capture.
+            if (_capturing)
+            {
+                _capturing = false;
+                _pendingModifierBindings.Clear();
+                RefreshText();
+            }
+
+            base._ExitTree();
         }
 
         /// <inheritdoc />
@@ -295,6 +318,15 @@ namespace STS2RitsuLib.Settings
             ApplyBinding(binding, true);
             _capturing = false;
             _pendingModifierBindings.Clear();
+        }
+
+        private void EndCapture()
+        {
+            if (!_capturing)
+                return;
+            _capturing = false;
+            _pendingModifierBindings.Clear();
+            RefreshText();
         }
 
         private void BeginCapture()
