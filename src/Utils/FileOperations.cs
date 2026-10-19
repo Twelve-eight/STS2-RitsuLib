@@ -138,6 +138,10 @@ namespace STS2RitsuLib.Utils
             }
             catch (Exception ex) when (RitsuLibExceptionPolicy.IsRecoverable(ex))
             {
+                // RotateBackup already moved the real file aside, so an exception between that
+                // move and the final rename leaves the target missing. Without this restore the
+                // caller is told the write failed while the previous settings file is also gone.
+                RestoreFromBackup(filePath, filePath + BackupSuffix, context);
                 RitsuLibFramework.Logger.ErrorNoTrace(
                     $"[{context}] Unexpected error during atomic write to '{filePath}': {ex.Message}");
                 return new()
