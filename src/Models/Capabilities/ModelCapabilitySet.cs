@@ -111,12 +111,16 @@ namespace STS2RitsuLib.Models.Capabilities
                         return null;
                     }
 
+                    // Attach before publishing the instance: if Attach throws, the slot must still
+                    // hold the previous capability. Assigning first left an Owner-less instance in
+                    // _capabilities, and EnsureCanAttach then let the same object attach to a second
+                    // model.
+                    merged.Attach(Owner);
                     _capabilities[i] = merged;
                     InvalidateAttachedSnapshot();
                     if (defaultCapabilityId != null &&
                         string.Equals(merged.CapabilityId, defaultCapabilityId, StringComparison.Ordinal))
                         _defaultCapabilities.Add(merged);
-                    merged.Attach(Owner);
                     MarkDynamicVarsJustUpgraded(merged, options);
                     MarkDirty();
                     return merged;

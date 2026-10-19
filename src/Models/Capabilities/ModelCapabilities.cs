@@ -71,9 +71,12 @@ namespace STS2RitsuLib.Models.Capabilities
 
         internal static void MarkSavedDataDirty(AbstractModel model)
         {
+            // Mirror CreateCollection: before persistence is registered there is no bag to mark,
+            // and CreateCollection already treats that state as a no-op. Throwing here made the
+            // same precondition fatal for mutation but harmless for read, so callers could Get()
+            // a capability set and then crash on the first mutation during mod initialisation.
             if (!IsInitialized)
-                throw new InvalidOperationException(
-                    "ModelCapabilities persistence has not been registered. Register a model capability or default capability modifier during mod initialization before mutating model capabilities.");
+                return;
 
             ModelSavedDataRuntime.GetBag(model).Set(SavedDataSlotKey, new ModelCapabilitySaveDocument());
         }
