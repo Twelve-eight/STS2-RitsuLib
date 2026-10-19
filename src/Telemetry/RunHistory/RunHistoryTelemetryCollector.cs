@@ -211,8 +211,12 @@ namespace STS2RitsuLib.Telemetry.RunHistory
             JsonNode? runHistory;
             try
             {
+                // Anonymise before anything leaves the process: SerializableRun.Players carries
+                // net_id, which is the player's SteamID64 in a Steam session. The engine already
+                // provides SerializableRun.Anonymized() for exactly this; telemetry must not ship
+                // a stable, linkable account id to third-party applicants.
                 runHistory = JsonSerializer.SerializeToNode(
-                    evt.Run,
+                    evt.Run.Anonymized(),
                     JsonSerializationUtility.GetTypeInfo<SerializableRun>());
             }
             catch (Exception ex)
